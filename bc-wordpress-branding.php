@@ -135,15 +135,18 @@ function bc_custom_meta_box_function() {
 * Disable My Sites List submenu in toolbar
 * from http://wpjourno.com/my-sites-toolbar-menu-wordpress-multisite/
 */
+add_action( 'admin_bar_menu', 'bc_custom_remove_my_sites', 999 );
+
 function bc_custom_remove_my_sites( $wp_admin_bar ) {
 	$wp_admin_bar->remove_node( 'my-sites-list' );
 
 }
-add_action( 'admin_bar_menu', 'bc_custom_remove_my_sites', 999 );
 
 /*
 * Rebuild my-sites-list menu. Based on WP Core code
 */
+add_action( 'admin_bar_menu', 'bc_custom_wp_admin_bar_my_sites_menu', 30 );
+
 function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 
 	if ( current_user_can( 'manage_network' ) ) { // Added
@@ -211,4 +214,4 @@ function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 		restore_current_blog();
 	}
 }
-add_action( 'admin_bar_menu', 'bc_custom_wp_admin_bar_my_sites_menu', 30 );
+
