@@ -41,3 +41,60 @@ function bc_intro_meta_box_function() {
 		If you run in to issues, please submit a ticket through the <a href="//www.bellevuecollege.edu/servicedesk/" target="_blank">Service Desk</a>.</p>';
 }
 
+/**
+ * Add dashboard user list meta box
+ * 
+ * List admin users on the dashboard
+ */
+add_action( 'wp_dashboard_setup', 'bc_user_list_meta_box' );
+
+function bc_user_list_meta_box() {
+	if ( current_user_can( 'edit_posts' ) ) {
+		wp_add_dashboard_widget(
+			'bc_user_list_meta_box_widget',  // Widget slug.
+			'Users with Website Access',     // Title.
+			'bc_user_list_meta_box_function' // Display function.
+		);
+	}
+}
+
+// Meta box content
+function bc_user_list_meta_box_function() {
+
+	// Get list of users in used roles
+	$user_list = get_users( array(
+
+		// Exclude these roles - this should move to configuration eventually
+		'role__not_in' => array(
+			'administrator',
+			'subscriber',
+		),
+		'orderby' => 'display_name',
+		)
+	);
+
+	// Build output
+	$output = '';
+	$output .= '<dl>';
+
+	// Output user list
+	foreach ( $user_list as $user ) {
+		$output .= '<dt>';
+		$output .= '<strong><a href="mailto:' . esc_html( $user->user_email ) . '">' . esc_html( $user->display_name ) . '</a></strong>';
+		$output .= '</dt>';
+		$output .= '<dd>Roles: ';
+
+		// Output roles, space seperated
+		foreach ( $user->roles as $role ) {
+			$output .= $role . ' ';
+		}
+		$output .= '</dd>';
+	}
+	$output .= '</dl><hr />';
+
+	// Output instructions
+	$output .= '<p>To request changes to website managers, please submit a <a href="//www.bellevuecollege.edu/servicedesk/" target="_blank">Service Desk ticket</a>.</p>';
+
+	// Echo output
+	echo $output;
+}
