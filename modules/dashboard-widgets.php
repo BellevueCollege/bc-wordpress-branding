@@ -64,10 +64,13 @@ function bc_user_list_meta_box_function() {
 	// Get list of users in used roles
 	$user_list = get_users( array(
 
-		// Exclude these roles - this should move to configuration eventually
-		'role__not_in' => array(
-			'administrator',
-			'subscriber',
+		// Include these roles - this should move to configuration eventually
+		'role__in' => array(
+			'author',
+			'contributor',
+			'dept-site-owner',
+			'editor',
+			'gf-view-entries',
 		),
 		'orderby' => 'display_name',
 		)
