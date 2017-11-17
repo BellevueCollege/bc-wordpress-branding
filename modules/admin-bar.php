@@ -89,23 +89,6 @@ add_action( 'admin_bar_menu', 'bc_custom_wp_admin_bar_my_sites_menu', 30 );
 
 function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 
-	if ( current_user_can( 'manage_network' ) ) { // Added
-
-		$wp_admin_bar->add_menu( array(
-			'id'    => 'bc-custom-network-sites',
-			'parent' => 'my-sites',
-			'title' => 'Network Sites',
-			'href'  => network_admin_url( 'sites.php' ),
-		));
-
-		$wp_admin_bar->add_menu( array(
-			'id'    => 'bc-custom-network-users',
-			'parent' => 'my-sites',
-			'title' => 'Network Users',
-			'href'  => network_admin_url( 'users.php' ),
-		));
-	} // Added
-
 	// Add site links
 	$wp_admin_bar->add_group( array(
 		'parent' => 'my-sites',
@@ -114,10 +97,16 @@ function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 			'class' => current_user_can( 'manage_network' ) ? 'ab-sub-secondary' : '',
 		),
 	) );
+
+	// Standard site menus 
 	foreach ( (array) $wp_admin_bar->user->blogs as $blog ) {
 		switch_to_blog( $blog->userblog_id );
 
-		if ( current_user_can( 'edit_posts' ) && current_user_can( 'read' ) && ! current_user_can( 'manage_network' ) ) { // Added
+		// Only output under certain conditions
+		if ( current_user_can( 'edit_posts' ) 
+			&& current_user_can( 'read' ) 
+			&& ( ! current_user_can( 'manage_network' ) || is_main_site( $blog->userblog_id ) ) ) {
+			
 			$blavatar = '<div class="blavatar"></div>';
 			$blogname = $blog->blogname;
 			if ( ! $blogname ) {
@@ -152,5 +141,58 @@ function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 			) );
 		} // Added
 		restore_current_blog();
+	}
+
+	// Menu for network admins
+	if ( current_user_can( 'manage_network' ) ) {
+
+		// Current Site Info
+		$wp_admin_bar->add_menu( array(
+			'id'    => 'bc-custom-current-site-info',
+			'parent' => 'my-sites',
+			'title' => 'Current Site Info',
+			'href'  => admin_url(),
+		));
+
+		// Current Blog Name
+		$wp_admin_bar->add_menu( array(
+			'id'    => 'bc-custom-current-site-name',
+			'parent' => 'bc-custom-current-site-info',
+			'title' => get_bloginfo( 'name' ),
+			'href'  => admin_url(),
+		));
+
+		// Current Blog ID
+		$wp_admin_bar->add_menu( array(
+			'id'    => 'bc-custom-current-site-id',
+			'parent' => 'bc-custom-current-site-info',
+			'title' => 'Current Site ID: ' . get_current_blog_id(),
+			'href'  => network_admin_url( 'site-info.php?id=' . get_current_blog_id() ),
+		));
+
+		// Site Admins submenu
+		$wp_admin_bar->add_menu( array(
+			'id'    => 'bc-custom-current-site-user',
+			'parent' => 'bc-custom-current-site-info',
+			'title' => 'Site Administrators',
+			'href'  => admin_url( 'users.php?role=dept-site-owner' ),
+		));
+
+		// Get Dept Site Owners
+		$user_list = get_users( array(
+			'role'    => 'dept-site-owner',
+			'orderby' => 'display_name',
+			)
+		);
+
+		// Loop through
+		foreach ( $user_list as $user ) {
+			$wp_admin_bar->add_menu( array(
+				'id'     => 'bc-custom-current-site-user-' . $user->ID,
+				'parent' => 'bc-custom-current-site-user',
+				'title'  => esc_html( $user->display_name ),
+				'href'   => admin_url( 'user-edit.php?user_id=' . $user->ID ),
+			));
+		}
 	}
 }
