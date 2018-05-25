@@ -69,7 +69,7 @@ if ( ! function_exists( 'bc_custom_hide_admin_bar_search' ) ) {
 }
 
 
-// Reconstruct My Sites menu, only listing sites that users can both edit and read
+// Reconstruct My Sites menu, only listing sites where users can read private posts
 
 /*
 * Disable My Sites List submenu in toolbar
@@ -103,7 +103,7 @@ function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 		switch_to_blog( $blog->userblog_id );
 
 		// Only output under certain conditions
-		if ( current_user_can( 'edit_posts' ) 
+		if ( current_user_can( 'read_private_posts' ) 
 			&& current_user_can( 'read' ) 
 			&& ( ! current_user_can( 'manage_network' ) || is_main_site( $blog->userblog_id ) ) ) {
 			
