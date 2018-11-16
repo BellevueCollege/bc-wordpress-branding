@@ -98,51 +98,6 @@ function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 		),
 	) );
 
-	// Standard site menus 
-	foreach ( (array) $wp_admin_bar->user->blogs as $blog ) {
-		switch_to_blog( $blog->userblog_id );
-
-		// Only output under certain conditions
-		if ( current_user_can( 'read_private_posts' ) 
-			&& current_user_can( 'read' ) 
-			&& ( ! current_user_can( 'manage_network' ) || is_main_site( $blog->userblog_id ) ) ) {
-			
-			$blavatar = '<div class="blavatar"></div>';
-			$blogname = $blog->blogname;
-			if ( ! $blogname ) {
-				$blogname = preg_replace( '#^(https?://)?(www.)?#', '', get_home_url() );
-			}
-			$menu_id  = 'bc-custom-blog-' . $blog->userblog_id;
-			$wp_admin_bar->add_menu( array(
-				'parent'    => 'bc-custom-my-sites-list',
-				'id'        => $menu_id,
-				'title'     => $blavatar . $blogname,
-				'href'      => admin_url(),
-			) );
-			$wp_admin_bar->add_menu( array(
-				'parent' => $menu_id,
-				'id'     => $menu_id . '-d',
-				'title'  => __( 'Dashboard' ),
-				'href'   => admin_url(),
-			) );
-			if ( current_user_can( get_post_type_object( 'post' )->cap->create_posts ) ) {
-				$wp_admin_bar->add_menu( array(
-					'parent' => $menu_id,
-					'id'     => $menu_id . '-n',
-					'title'  => __( 'New Post' ),
-					'href'   => admin_url( 'post-new.php' ),
-				) );
-			}
-			$wp_admin_bar->add_menu( array(
-				'parent' => $menu_id,
-				'id'     => $menu_id . '-v',
-				'title'  => __( 'Visit Site' ),
-				'href'   => home_url( '/' ),
-			) );
-		} // Added
-		restore_current_blog();
-	}
-
 	// Menu for network admins
 	if ( current_user_can( 'manage_network' ) ) {
 
@@ -193,6 +148,71 @@ function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 				'title'  => esc_html( $user->display_name ),
 				'href'   => admin_url( 'user-edit.php?user_id=' . $user->ID ),
 			));
+		}
+	} else {
+		// Standard site menus 
+
+		// Loop through sites that would display by default (all sites where user has any role)
+		foreach ( (array) $wp_admin_bar->user->blogs as $blog ) {
+
+			// Query site user table to see if user has a non-Subscriber role
+			$props = array(
+				'blog_id'      => $blog->userblog_id,
+				'role__in'     => array(
+										'author',
+										'contributor',
+										'dept-site-owner',
+										'editor',
+										'gf-view-entries',
+										'calendar-contributor',
+									),    
+				'include'      => array( get_current_user_id() ),
+				'fields'       => array( 'ID' ),
+			);
+			$users = get_users( $props );
+	
+			// If a user is returned (has role), proceed
+			if ( isset( $users[0] ) ) {
+				
+				// switch_to_blog is resource heavy. get_users query allows us to avoid running it if not needed
+				switch_to_blog( $blog->userblog_id );
+				
+				$blavatar = '<div class="blavatar"></div>';
+				$blogname = $blog->blogname;
+				if ( ! $blogname ) {
+					$blogname = preg_replace( '#^(https?://)?(www.)?#', '', get_home_url() );
+				}
+				$menu_id  = 'bc-custom-blog-' . $blog->userblog_id;
+				$wp_admin_bar->add_menu( array(
+					'parent'    => 'bc-custom-my-sites-list',
+					'id'        => $menu_id,
+					'title'     => $blavatar . $blogname,
+					'href'      => admin_url(),
+				) );
+				$wp_admin_bar->add_menu( array(
+					'parent' => $menu_id,
+					'id'     => $menu_id . '-d',
+					'title'  => __( 'Dashboard' ),
+					'href'   => admin_url(),
+				) );
+				if ( current_user_can( get_post_type_object( 'post' )->cap->create_posts ) ) {
+					$wp_admin_bar->add_menu( array(
+						'parent' => $menu_id,
+						'id'     => $menu_id . '-n',
+						'title'  => __( 'New Post' ),
+						'href'   => admin_url( 'post-new.php' ),
+					) );
+				}
+				$wp_admin_bar->add_menu( array(
+					'parent' => $menu_id,
+					'id'     => $menu_id . '-v',
+					'title'  => __( 'Visit Site' ),
+					'href'   => home_url( '/' ),
+				) );
+
+				restore_current_blog();
+			
+			}
 		}
 	}
 }
