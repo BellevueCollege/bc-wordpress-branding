@@ -71,35 +71,85 @@ if ( ! function_exists( 'bc_custom_hide_admin_bar_search' ) ) {
 
 // Reconstruct My Sites menu, only listing sites where users can read private posts
 
-/*
-* Disable My Sites List submenu in toolbar
-* from http://wpjourno.com/my-sites-toolbar-menu-wordpress-multisite/
-*/
-add_action( 'admin_bar_menu', 'bc_custom_remove_my_sites', 999 );
+/**
+ * De-register the native WP Admin Bar My Sites function.
+ *
+ * Loading all sites menu for large multisite is inefficient and bad news. This de-registers the native WP function so it can be replaced with a more efficient one.
+ */
+add_action( 'add_admin_bar_menus', 'bc_custom_remove_my_sites', 10, 0 );
 
-function bc_custom_remove_my_sites( $wp_admin_bar ) {
-	$wp_admin_bar->remove_node( 'my-sites-list' );
-
+function bc_custom_remove_my_sites() {
+	remove_action( 'admin_bar_menu', 'wp_admin_bar_my_sites_menu', 20 );
 }
 
 /*
 * Rebuild my-sites-list menu. Based on WP Core code
+* Heavily inspired by https://wpartisan.me/tutorials/multisite-speed-improvements-admin-bar
 */
-add_action( 'admin_bar_menu', 'bc_custom_wp_admin_bar_my_sites_menu', 30 );
+add_action( 'admin_bar_menu', 'bc_custom_wp_admin_bar_my_sites_menu' );
 
 function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
+	// Don't show for logged out users or single site mode.
+	if ( ! is_user_logged_in() || ! is_multisite() )
+		return;
 
-	// Add site links
-	$wp_admin_bar->add_group( array(
-		'parent' => 'my-sites',
-		'id'     => 'bc-custom-my-sites-list',
-		'meta'   => array(
-			'class' => current_user_can( 'manage_network' ) ? 'ab-sub-secondary' : '',
-		),
+	$wp_admin_bar->add_menu( array(
+		'id'    => 'my-sites',
+		'title' => __( 'My Sites' ),
+		'href'  => $my_sites_url,
 	) );
 
 	// Menu for network admins
 	if ( current_user_can( 'manage_network' ) ) {
+		$wp_admin_bar->add_group( array(
+			'parent' => 'my-sites',
+			'id'     => 'my-sites-super-admin',
+		) );
+
+		$wp_admin_bar->add_menu( array(
+			'parent' => 'my-sites-super-admin',
+			'id'     => 'network-admin',
+			'title'  => __('Network Admin'),
+			'href'   => network_admin_url(),
+		) );
+
+		$wp_admin_bar->add_menu( array(
+			'parent' => 'network-admin',
+			'id'     => 'network-admin-d',
+			'title'  => __( 'Dashboard' ),
+			'href'   => network_admin_url(),
+		) );
+		$wp_admin_bar->add_menu( array(
+			'parent' => 'network-admin',
+			'id'     => 'network-admin-s',
+			'title'  => __( 'Sites' ),
+			'href'   => network_admin_url( 'sites.php' ),
+		) );
+		$wp_admin_bar->add_menu( array(
+			'parent' => 'network-admin',
+			'id'     => 'network-admin-u',
+			'title'  => __( 'Users' ),
+			'href'   => network_admin_url( 'users.php' ),
+		) );
+		$wp_admin_bar->add_menu( array(
+			'parent' => 'network-admin',
+			'id'     => 'network-admin-t',
+			'title'  => __( 'Themes' ),
+			'href'   => network_admin_url( 'themes.php' ),
+		) );
+		$wp_admin_bar->add_menu( array(
+			'parent' => 'network-admin',
+			'id'     => 'network-admin-p',
+			'title'  => __( 'Plugins' ),
+			'href'   => network_admin_url( 'plugins.php' ),
+		) );
+		$wp_admin_bar->add_menu( array(
+			'parent' => 'network-admin',
+			'id'     => 'network-admin-o',
+			'title'  => __( 'Settings' ),
+			'href'   => network_admin_url( 'settings.php' ),
+		) );
+
 
 		// Current Site Info
 		$wp_admin_bar->add_menu( array(
@@ -151,6 +201,13 @@ function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 		}
 	} else {
 		// Standard site menus 
+		$wp_admin_bar->add_group( array(
+			'parent' => 'my-sites',
+			'id'     => 'my-sites-list',
+			'meta'   => array(
+				'class' => is_super_admin() ? 'ab-sub-secondary' : '',
+			),
+		) );
 
 		// Loop through sites that would display by default (all sites where user has any role)
 		foreach ( (array) $wp_admin_bar->user->blogs as $blog ) {
@@ -173,45 +230,42 @@ function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 	
 			// If a user is returned (has role), proceed
 			if ( isset( $users[0] ) ) {
-				
-				// switch_to_blog is resource heavy. get_users query allows us to avoid running it if not needed
-				switch_to_blog( $blog->userblog_id );
-				
-				$blavatar = '<div class="blavatar"></div>';
+			
+				$blavatar = '
+		<div class="blavatar"></div>
+ 
+		';
+
 				$blogname = $blog->blogname;
+
 				if ( ! $blogname ) {
-					$blogname = preg_replace( '#^(https?://)?(www.)?#', '', get_home_url() );
+					$blogname = preg_replace( '#^(https?://)?(www.)?#', '', $blog->siteurl );
 				}
-				$menu_id  = 'bc-custom-blog-' . $blog->userblog_id;
+
+				$menu_id  = 'blog-' . $blog->userblog_id;
+
+				$admin_url = $blog->siteurl . '/wp-admin';
+
 				$wp_admin_bar->add_menu( array(
-					'parent'    => 'bc-custom-my-sites-list',
+					'parent'    => 'my-sites-list',
 					'id'        => $menu_id,
 					'title'     => $blavatar . $blogname,
-					'href'      => admin_url(),
+					'href'      => $admin_url,
 				) );
+
 				$wp_admin_bar->add_menu( array(
 					'parent' => $menu_id,
 					'id'     => $menu_id . '-d',
 					'title'  => __( 'Dashboard' ),
-					'href'   => admin_url(),
+					'href'   => $admin_url,
 				) );
-				if ( current_user_can( get_post_type_object( 'post' )->cap->create_posts ) ) {
-					$wp_admin_bar->add_menu( array(
-						'parent' => $menu_id,
-						'id'     => $menu_id . '-n',
-						'title'  => __( 'New Post' ),
-						'href'   => admin_url( 'post-new.php' ),
-					) );
-				}
+
 				$wp_admin_bar->add_menu( array(
 					'parent' => $menu_id,
 					'id'     => $menu_id . '-v',
 					'title'  => __( 'Visit Site' ),
-					'href'   => home_url( '/' ),
+					'href'   => $blog->siteurl,
 				) );
-
-				restore_current_blog();
-			
 			}
 		}
 	}
