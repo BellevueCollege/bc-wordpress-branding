@@ -212,61 +212,41 @@ function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 		// Loop through sites that would display by default (all sites where user has any role)
 		foreach ( (array) $wp_admin_bar->user->blogs as $blog ) {
 
-			// Query site user table to see if user has a non-Subscriber role
-			$props = array(
-				'blog_id'      => $blog->userblog_id,
-				'role__in'     => array(
-										'author',
-										'contributor',
-										'dept-site-owner',
-										'editor',
-										'gf-view-entries',
-										'calendar-contributor',
-									),    
-				'include'      => array( get_current_user_id() ),
-				'fields'       => array( 'ID' ),
-			);
-			$users = get_users( $props );
-	
-			// If a user is returned (has role), proceed
-			if ( isset( $users[0] ) ) {
-			
-				$blavatar = '
-		<div class="blavatar"></div>
- 
-		';
+			$blavatar = '
+	<div class="blavatar"></div>
 
-				$blogname = $blog->blogname;
+	';
 
-				if ( ! $blogname ) {
-					$blogname = preg_replace( '#^(https?://)?(www.)?#', '', $blog->siteurl );
-				}
+			$blogname = $blog->blogname;
 
-				$menu_id  = 'blog-' . $blog->userblog_id;
-
-				$admin_url = $blog->siteurl . '/wp-admin';
-
-				$wp_admin_bar->add_menu( array(
-					'parent'    => 'my-sites-list',
-					'id'        => $menu_id,
-					'title'     => $blavatar . $blogname,
-					'href'      => $admin_url,
-				) );
-
-				$wp_admin_bar->add_menu( array(
-					'parent' => $menu_id,
-					'id'     => $menu_id . '-d',
-					'title'  => __( 'Dashboard' ),
-					'href'   => $admin_url,
-				) );
-
-				$wp_admin_bar->add_menu( array(
-					'parent' => $menu_id,
-					'id'     => $menu_id . '-v',
-					'title'  => __( 'Visit Site' ),
-					'href'   => $blog->siteurl,
-				) );
+			if ( ! $blogname ) {
+				$blogname = preg_replace( '#^(https?://)?(www.)?#', '', $blog->siteurl );
 			}
+
+			$menu_id  = 'blog-' . $blog->userblog_id;
+
+			$admin_url = $blog->siteurl . '/wp-admin';
+
+			$wp_admin_bar->add_menu( array(
+				'parent'    => 'my-sites-list',
+				'id'        => $menu_id,
+				'title'     => $blavatar . $blogname,
+				'href'      => $admin_url,
+			) );
+
+			$wp_admin_bar->add_menu( array(
+				'parent' => $menu_id,
+				'id'     => $menu_id . '-d',
+				'title'  => __( 'Dashboard' ),
+				'href'   => $admin_url,
+			) );
+
+			$wp_admin_bar->add_menu( array(
+				'parent' => $menu_id,
+				'id'     => $menu_id . '-v',
+				'title'  => __( 'Visit Site' ),
+				'href'   => $blog->siteurl,
+			) );
 		}
 	}
 }
