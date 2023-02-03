@@ -72,6 +72,8 @@ function bc_user_list_meta_box_function() {
 			'editor',
 			'gf-view-entries',
 			'calendar-contributor',
+			'core_site_editor',
+			'core-site-editor',
 		),
 		'orderby' => 'display_name',
 		)

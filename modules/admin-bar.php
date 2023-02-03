@@ -96,7 +96,7 @@ function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 	$wp_admin_bar->add_menu( array(
 		'id'    => 'my-sites',
 		'title' => __( 'My Sites' ),
-		'href'  => $my_sites_url,
+		'href'  => $my_sites_url ?? null,
 	) );
 
 	// Menu for network admins
