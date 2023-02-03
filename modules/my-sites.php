@@ -27,7 +27,9 @@ function bc_custom_get_blogs_filter( $sites, $user_id, $all ) {
 											'editor',
 											'gf-view-entries',
 											'calendar-contributor',
-										),    
+											'core_site_editor',
+											'core-site-editor',
+										),
 					'include'      => array( get_current_user_id() ),
 					'fields'       => array( 'ID' ),
 				);
