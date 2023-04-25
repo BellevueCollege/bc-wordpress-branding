@@ -7,7 +7,7 @@ defined( 'ABSPATH' ) || exit;
 add_action( 'admin_init', 'bc_custom_remove_dashboard_meta' );
 
 function bc_custom_remove_dashboard_meta() {
-	if ( ! current_user_can( 'edit_posts' ) ) {
+	if ( ! current_user_can( 'edit_posts' ) && ! current_user_can( 'upload_files ') ) {
 		remove_meta_box( 'dashboard_incoming_links', 'dashboard', 'normal' );
 		remove_meta_box( 'dashboard_plugins', 'dashboard', 'normal' );
 		remove_meta_box( 'dashboard_primary', 'dashboard', 'side' );
@@ -37,8 +37,8 @@ function bc_intro_meta_box() {
 // Meta box content
 function bc_intro_meta_box_function() {
 	echo '<p>The Bellevue College CMS is used to manage content across the Bellevue College website.</p>
-		<p>Content posted on the BC CMS is subject to the <a href="//www.bellevuecollege.edu/styleguide/" target="_blank">BC Style Guide</a>. 
-		If you run in to issues, please submit a ticket through the <a href="//www.bellevuecollege.edu/servicedesk/" target="_blank">Service Desk</a>.</p>';
+		<p>Content posted on the BC CMS is subject to the <a href="https://www.bellevuecollege.edu/faculty-staff/style-guide/" target="_blank">BC Style Guide</a>. 
+		If you run in to issues, please submit a ticket through the <a href="https://www.bellevuecollege.edu/servicedesk/" target="_blank">Service Desk</a>.</p>';
 }
 
 /**
@@ -49,7 +49,7 @@ function bc_intro_meta_box_function() {
 add_action( 'wp_dashboard_setup', 'bc_user_list_meta_box' );
 
 function bc_user_list_meta_box() {
-	if ( current_user_can( 'edit_posts' ) ) {
+	if ( current_user_can( 'edit_posts' ) || current_user_can( 'upload_files ') ) {
 		wp_add_dashboard_widget(
 			'bc_user_list_meta_box_widget',  // Widget slug.
 			'Users with Website Access',     // Title.
@@ -81,22 +81,35 @@ function bc_user_list_meta_box_function() {
 
 	// Build output
 	$output = '';
-	$output .= '<dl>';
+	$output .= '<ul>';
 
 	// Output user list
 	foreach ( $user_list as $user ) {
-		$output .= '<dt>';
+		$output .= '<li>';
 		$output .= '<strong><a href="mailto:' . esc_html( $user->user_email ) . '">' . esc_html( $user->display_name ) . '</a></strong>';
-		$output .= '</dt>';
-		$output .= '<dd>Roles: ';
+		$output .= '<ul>';
+		$output .= '<li>Role(s): ';
 
 		// Output roles, space seperated
 		foreach ( $user->roles as $role ) {
 			$output .= $role . ' ';
 		}
-		$output .= '</dd>';
+		$output .= '</li>';
+
+		if ( function_exists('pp_get_groups_for_user') ) {
+			$groups = pp_get_groups_for_user( $user->ID, 'pp_group', array( 'metagroup_type' => null, 'status' => 'active', 'force_refresh' => true ) );
+			//echo '<pre>'; print_r( $groups); echo '</pre>';
+			if ( ! empty( $groups ) ) {
+				$output .= '<li>Groups: ';
+				foreach ( $groups as $group ) {
+					$output .= $group->group_name . ', ';
+				}
+				$output .= '</li>';
+			}
+		}
+		$output .= '</li>';
 	}
-	$output .= '</dl><hr />';
+	$output .= '</ul><hr />';
 
 	// Output instructions
 	$output .= '<p>To request changes to website managers, please submit a <a href="//www.bellevuecollege.edu/servicedesk/" target="_blank">Service Desk ticket</a>.</p>';
