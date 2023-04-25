@@ -4,7 +4,7 @@ Plugin Name: BC WordPress Branding
 Plugin URI: https://github.com/BellevueCollege/bc-wordpress-branding
 Description: Add BC Branding customizations to WordPress dashboard
 Author: Bellevue College Integration Team
-Version: 1.5.1 #{versionStamp}#
+Version: 1.6 #{versionStamp}#
 Author URI: http://www.bellevuecollege.edu
 GitHub Plugin URI: BellevueCollege/bc-wordpress-branding
 */
