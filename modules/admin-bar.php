@@ -41,17 +41,6 @@ function bc_custom_admin_menus( $wp_admin_bar ) {
 	$wp_admin_bar->add_node( $bc_menu_sd_args );
 }
 
-// Change 'Howdy' to 'Hello'
-add_filter( 'admin_bar_menu', 'bc_custom_replace_howdy', 25 );
-
-function bc_custom_replace_howdy( $wp_admin_bar ) {
-	$my_account = $wp_admin_bar->get_node( 'my-account' );
-	$newtitle = str_replace( 'Howdy,', 'Hello', $my_account->title );
-	$wp_admin_bar->add_node( array(
-		'id' => 'my-account',
-		'title' => $newtitle,
-	) );
-}
 
 // From 'Hide Admin Bar Search' plugin by Helen Hou-Sandi - http://www.helenhousandi.com
 if ( ! function_exists( 'bc_custom_hide_admin_bar_search' ) ) {
