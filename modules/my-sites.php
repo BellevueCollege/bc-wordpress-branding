@@ -42,7 +42,7 @@ function bc_custom_get_blogs_filter( $sites, $user_id, $all ) {
 			}
 
 			// Cache this in a transient for 3 seconds
-			set_site_transient( $transient_name, $sites, 3 );
+			set_site_transient( $transient_name, $sites, 60 * 5 ); // 5 minutes
 			return $sites;
 		}
 		return $sites_cached;
