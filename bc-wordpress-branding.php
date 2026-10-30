@@ -22,12 +22,13 @@ require_once( plugin_dir_path( __FILE__ ) . 'modules/profile-fields.php' );
 
 /**
  * Roles that count as website access for My Sites and the dashboard user list.
- * Subscriber-only memberships are excluded elsewhere using this list.
+ * Subscriber-only memberships are excluded elsewhere using this list (includes site administrators).
  *
  * @return string[]
  */
 function bc_custom_website_access_roles() {
 	return array(
+		'administrator',
 		'author',
 		'contributor',
 		'dept-site-owner',

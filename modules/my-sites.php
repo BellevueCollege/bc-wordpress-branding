@@ -52,8 +52,9 @@ add_filter( 'pre_get_blogs_of_user', function ( $sites, $user_id, $all ) {
 	$skip_role_filter     = user_can( $user_id, 'manage_network' ) || current_user_can( 'manage_network' );
 	$website_access_roles = bc_custom_website_access_roles();
 
-	$site_has_website_access_role = function ( $capabilities_meta ) use ( $website_access_roles ) {
-		$capabilities = maybe_unserialize( $capabilities_meta );
+	$site_has_website_access_role = function ( $meta_key ) use ( $website_access_roles, $user_id ) {
+		$capabilities = get_user_meta( $user_id, $meta_key, true );
+		$capabilities = maybe_unserialize( $capabilities );
 		if ( ! is_array( $capabilities ) ) {
 			return false;
 		}
@@ -75,10 +76,11 @@ add_filter( 'pre_get_blogs_of_user', function ( $sites, $user_id, $all ) {
 
 	// Main site (blog ID 1) stores capabilities under the base prefix, not wp_2_, wp_3_, etc.
 	if ( isset( $user_meta[ $wpdb->base_prefix . 'capabilities' ] ) && defined( 'MULTISITE' ) ) {
-		if ( $skip_role_filter || $site_has_website_access_role( $user_meta[ $wpdb->base_prefix . 'capabilities' ] ) ) {
+		$main_capabilities_key = $wpdb->base_prefix . 'capabilities';
+		if ( $skip_role_filter || $site_has_website_access_role( $main_capabilities_key ) ) {
 			$site_ids[] = 1;
 		}
-		unset( $user_meta[ $wpdb->base_prefix . 'capabilities' ] );
+		unset( $user_meta[ $main_capabilities_key ] );
 	}
 
 	// Other sites: one meta row per site, named like wp_123_capabilities.
@@ -96,7 +98,7 @@ add_filter( 'pre_get_blogs_of_user', function ( $sites, $user_id, $all ) {
 		}
 
 		// Non-network users: drop sites where they only have the subscriber role.
-		if ( ! $skip_role_filter && ! $site_has_website_access_role( $user_meta[ $meta_key ] ) ) {
+		if ( ! $skip_role_filter && ! $site_has_website_access_role( $meta_key ) ) {
 			continue;
 		}
 
