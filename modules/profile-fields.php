@@ -16,7 +16,16 @@ function bc_custom_disable_profile_fields() {
 add_action( 'admin_enqueue_scripts', 'bc_custom_disable_profile_fields_js' );
 
 function bc_custom_disable_profile_fields_js( $hook ) {
-	if ( 'profile.php' == $hook && ! current_user_can( 'setup_network' ) ) {
-		wp_enqueue_script( 'disable_profile_fields', plugin_dir_url( dirname( __FILE__ ) ) . 'js/disable-profile-fields.js', array(), '1.0' );
+	if ( 'profile.php' !== $hook || current_user_can( 'setup_network' ) ) {
+		return;
 	}
+
+	// UI hint only: load in the footer so #your-profile exists before this runs.
+	wp_enqueue_script(
+		'disable_profile_fields',
+		plugin_dir_url( dirname( __FILE__ ) ) . 'js/disable-profile-fields.js',
+		array(),
+		'1.1',
+		true
+	);
 }
