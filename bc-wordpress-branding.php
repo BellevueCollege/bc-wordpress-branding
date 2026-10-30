@@ -19,3 +19,22 @@ require_once( plugin_dir_path( __FILE__ ) . 'modules/my-sites.php' );
 require_once( plugin_dir_path( __FILE__ ) . 'modules/admin-bar.php' );
 require_once( plugin_dir_path( __FILE__ ) . 'modules/dashboard-widgets.php' );
 require_once( plugin_dir_path( __FILE__ ) . 'modules/profile-fields.php' );
+
+/**
+ * Roles that count as website access for My Sites and the dashboard user list.
+ * Subscriber-only memberships are excluded elsewhere using this list.
+ *
+ * @return string[]
+ */
+function bc_custom_website_access_roles() {
+	return array(
+		'author',
+		'contributor',
+		'dept-site-owner',
+		'editor',
+		'gf-view-entries',
+		'calendar-contributor',
+		'core_site_editor',
+		'core-site-editor',
+	);
+}
