@@ -45,16 +45,19 @@ function bc_custom_admin_menus( $wp_admin_bar ) {
 // From 'Hide Admin Bar Search' plugin by Helen Hou-Sandi - http://www.helenhousandi.com
 if ( ! function_exists( 'bc_custom_hide_admin_bar_search' ) ) {
 	function bc_custom_hide_admin_bar_search() {
-	?>
-		<style type="text/css">
-		#wpadminbar #adminbarsearch {
-			display: none;
+		// Only when the toolbar is shown; avoid printing CSS on logged-out front-end views.
+		if ( ! is_admin_bar_showing() ) {
+			return;
 		}
-		</style>
-		<?php
+
+		if ( ! wp_style_is( 'admin-bar', 'enqueued' ) ) {
+			wp_enqueue_style( 'admin-bar' );
+		}
+
+		wp_add_inline_style( 'admin-bar', '#wpadminbar #adminbarsearch { display: none; }' );
 	}
-	add_action( 'admin_head', 'bc_custom_hide_admin_bar_search' );
-	add_action( 'wp_head', 'bc_custom_hide_admin_bar_search' );
+	add_action( 'wp_enqueue_scripts', 'bc_custom_hide_admin_bar_search' );
+	add_action( 'admin_enqueue_scripts', 'bc_custom_hide_admin_bar_search' );
 }
 
 
@@ -75,7 +78,7 @@ function bc_custom_remove_my_sites() {
 * Rebuild my-sites-list menu. Based on WP Core code
 * Heavily inspired by https://wpartisan.me/tutorials/multisite-speed-improvements-admin-bar
 */
-add_action( 'admin_bar_menu', 'bc_custom_wp_admin_bar_my_sites_menu' );
+add_action( 'admin_bar_menu', 'bc_custom_wp_admin_bar_my_sites_menu', 20 );
 
 function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 	// Don't show for logged out users or single site mode.
@@ -85,7 +88,7 @@ function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 	$wp_admin_bar->add_menu( array(
 		'id'    => 'my-sites',
 		'title' => __( 'My Sites' ),
-		'href'  => $my_sites_url ?? null,
+		'href'  => admin_url( 'my-sites.php' ),
 	) );
 
 	// Menu for network admins
@@ -152,7 +155,7 @@ function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 		$wp_admin_bar->add_menu( array(
 			'id'    => 'bc-custom-current-site-name',
 			'parent' => 'bc-custom-current-site-info',
-			'title' => get_bloginfo( 'name' ),
+			'title' => esc_html( get_bloginfo( 'name' ) ),
 			'href'  => admin_url(),
 		));
 
@@ -176,6 +179,7 @@ function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 		$user_list = get_users( array(
 			'role'    => 'dept-site-owner',
 			'orderby' => 'display_name',
+			'fields'  => array( 'ID', 'display_name' ),
 			)
 		);
 
@@ -198,8 +202,10 @@ function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 			),
 		) );
 
-		// Loop through sites that would display by default (all sites where user has any role)
-		foreach ( (array) $wp_admin_bar->user->blogs as $blog ) {
+		// List built in my-sites.php (website-access sites only, not every subscriber site).
+		$user_blogs = isset( $wp_admin_bar->user->blogs ) ? (array) $wp_admin_bar->user->blogs : array();
+
+		foreach ( $user_blogs as $blog ) {
 
 			$blavatar = '
 	<div class="blavatar"></div>
@@ -209,17 +215,18 @@ function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 			$blogname = $blog->blogname;
 
 			if ( ! $blogname ) {
-				$blogname = preg_replace( '#^(https?://)?(www.)?#', '', $blog->siteurl );
+				$blogname = preg_replace( '#^(https?://)?(www\.)?#', '', $blog->siteurl );
 			}
 
-			$menu_id  = 'blog-' . $blog->userblog_id;
+			$menu_id = 'blog-' . $blog->userblog_id;
 
-			$admin_url = $blog->siteurl . '/wp-admin';
+			$siteurl   = untrailingslashit( $blog->siteurl );
+			$admin_url = $siteurl . '/wp-admin';
 
 			$wp_admin_bar->add_menu( array(
 				'parent'    => 'my-sites-list',
 				'id'        => $menu_id,
-				'title'     => $blavatar . $blogname,
+				'title'     => $blavatar . esc_html( $blogname ),
 				'href'      => $admin_url,
 			) );
 
@@ -234,7 +241,7 @@ function bc_custom_wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 				'parent' => $menu_id,
 				'id'     => $menu_id . '-v',
 				'title'  => __( 'Visit Site' ),
-				'href'   => $blog->siteurl,
+				'href'   => $siteurl,
 			) );
 		}
 	}
